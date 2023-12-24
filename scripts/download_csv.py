@@ -72,7 +72,7 @@ def sanitize_title(title: str) -> str:
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
-def download_csvs(spreadsheet_id: str, credentials_path: str, output_dir: str):
+def main(spreadsheet_id: str, credentials_path: str, output_dir: str):
     """Download all sheets from a private Google spreadsheet
 
     - Each sheet will be downloaded as a separate .csv file in output_dir
@@ -105,4 +105,4 @@ def download_csvs(spreadsheet_id: str, credentials_path: str, output_dir: str):
 
 
 if __name__ == '__main__':
-    download_csvs()
+    main()
