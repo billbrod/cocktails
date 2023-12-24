@@ -72,7 +72,7 @@ def sanitize_title(title: str) -> str:
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
-def main(spreadsheet_id: str, credentials_path: str, output_dir: str):
+def download_csvs(spreadsheet_id: str, credentials_path: str, output_dir: str):
     """Download all sheets from a private Google spreadsheet
 
     - Each sheet will be downloaded as a separate .csv file in output_dir
@@ -92,15 +92,17 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str):
     sheet_titles = get_all_sheet_names(spreadsheet_resource, spreadsheet_id)
     contents = get_all_sheets_contents(spreadsheet_resource, spreadsheet_id, sheet_titles)
     for i, (t, c) in enumerate(zip(sheet_titles, contents)):
-        # make title lowercase and ascii (throw away accents)
-        t = sanitize_title(t)
         try:
             df = pd.DataFrame(c['values'])
+            df.iloc[0, 0] = t
         except KeyError:
             df = pd.DataFrame([])
+        # insert original title
+        # make title lowercase and ascii (throw away accents)
+        t = sanitize_title(t)
         filename = op.join(output_dir, f'{i:02d}_{t}.csv')
         df.to_csv(filename, index=False)
 
 
 if __name__ == '__main__':
-    main()
+    download_csvs()
