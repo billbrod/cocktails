@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
+import click
+import os.path as op
 import pandas as pd
+from glob import glob
 from typing import List
 from googleapiclient.discovery import Resource
+from googleapiclient.errors import HttpError
 from download_csv import connect_to_sheets
 
 
@@ -24,7 +28,11 @@ def format_csv(df: pd.DataFrame) -> pd.DataFrame:
     # grab the recipe and drop any empty lines
     recipe = df.iloc[7:total_oz_line, 2:5].dropna(0, 'all')
     # Find where directions start
-    directions_line = first_col.index('Directions')
+    directions_line = [i for i, c in enumerate(first_col) if isinstance(c, str)
+                       and c.startswith('Directions')]
+    if len(directions_line) != 1:
+        raise ValueError(f"Recipe {sheet_title} doesn't have a single directions line!")
+    directions_line = directions_line[0]
     # Find where notes start
     try:
         notes_line = first_col.index('NOTES:')
@@ -35,12 +43,12 @@ def format_csv(df: pd.DataFrame) -> pd.DataFrame:
     if notes_line != -1:
         notes = df.iloc[notes_line:, 0].dropna(how='all')
     else:
-        notes = ''
+        notes = pd.Series([])
     data = pd.Series({'sheet_title': sheet_title, 'title': title,
                       'description': description,
-                      'directions': convert_series_to_string(directions),
+                      'directions': convert_series_to_string(directions.fillna('')),
                       'notes': convert_series_to_string(notes),
-                      'recipe': recipe.fillna('').values})
+                      'recipe': recipe.fillna('').values}).fillna('')
     return data
 
 
@@ -53,10 +61,26 @@ def create_new_sheets(titles: List[str], spreadsheet_resource: Resource,
     """
     if len(titles[0]) <= 1:
         raise TypeError("titles should be a list of strings")
-    add_sheet = [{'addSheet': {'properties': {"title": t}}
-                  for t in titles}]
+    add_sheet = [{'addSheet': {'properties': {"title": t}}}
+                  for t in titles]
     spreadsheet_resource.batchUpdate(spreadsheetId=spreadsheet_id,
                                      body={"requests": add_sheet},
+                                     ).execute()
+
+
+def delete_existing_sheets(titles: List[str], spreadsheet_resource: Resource,
+                           spreadsheet_id: str):
+    """Delete all sheets whose names are found in titles
+    """
+    if len(titles[0]) <= 1:
+        raise TypeError("titles should be a list of strings")
+    sheets = spreadsheet_resource.get(spreadsheetId=spreadsheet_id).execute()['sheets']
+    ids = [s['properties']['sheetId'] for s in sheets
+           if s['properties']['title'] in titles]
+    delete_sheet = [{'deleteSheet': {'sheetId': id}}
+                    for id in ids]
+    spreadsheet_resource.batchUpdate(spreadsheetId=spreadsheet_id,
+                                     body={"requests": delete_sheet},
                                      ).execute()
 
 
@@ -66,6 +90,11 @@ def write_recipes_to_sheets(dfs: pd.Series, spreadsheet_resource: Resource,
     """
     sheet_titles = [df.pop('sheet_title') for df in dfs]
     recipes = [df.pop('recipe') for df in dfs]
+    validate = {t: r for t, r in zip(sheet_titles, recipes)}
+    for k, v in validate.items():
+        if v.shape[1] <= 2:
+            print(f"Recipe {k} doesn't have enough columns: ", v.shape)
+            print(v)
     indices = [{"range": f"{title}!A1",
                 "values": [df.index.to_list() + ['recipe']],
                 "majorDimension": "COLUMNS"}
@@ -96,5 +125,40 @@ def write_recipes_to_sheets(dfs: pd.Series, spreadsheet_resource: Resource,
                                               ).execute()
 
 
-def main(spreadsheet_id: str, credentials_path: str):
+@click.command()
+@click.argument('spreadsheet_id')
+@click.argument("credentials_path")
+@click.argument("input_dir")
+def main(spreadsheet_id: str, credentials_path: str,
+         input_dir: str):
+    """Convert old csvs to new format and write to (nearly empty) spreadsheet
+
+    - input_dir should be the path to a directory containing a bunch of csvs
+      files, as created by download_csv.py
+
+    - credentials_path is the path to the json giving credentials to a service
+      account with read access to the spreadsheet (see first two steps
+      https://github.com/marketplace/actions/gsheet-action#setup-of-credentials
+      for how to create the credentials and give them access).
+
+    - spreadsheet_id can be found in the url of the google spreadsheet, between
+      `/d/` and `/edit`
+
+    """
     spreadsheet_resource = connect_to_sheets(credentials_path)
+    data = []
+    for csv in sorted(glob(op.join(input_dir, '*csv'))):
+        df = pd.read_csv(csv)
+        data.append(format_csv(df))
+    titles = [d['sheet_title'] for d in data]
+    try:
+        create_new_sheets(titles, spreadsheet_resource, spreadsheet_id)
+    except HttpError:
+        # then delete existing sheets and create them again
+        delete_existing_sheets(titles, spreadsheet_resource, spreadsheet_id)
+        create_new_sheets(titles, spreadsheet_resource, spreadsheet_id)
+    write_recipes_to_sheets(data, spreadsheet_resource, spreadsheet_id)
+
+
+if __name__ == '__main__':
+    main()
