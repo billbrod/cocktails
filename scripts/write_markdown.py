@@ -9,7 +9,10 @@ from typing import Dict, List
 from googleapiclient.discovery import Resource
 import download_csv
 
-TEMPLATE = """{tags}
+TEMPLATE = """---
+search:
+  exclude: true
+---
 # {title}
 
 ## Description
@@ -123,6 +126,8 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
         recipe = json_from_sheet(c, t)
         recipe['order'] = i
         slug = download_csv.sanitize_title(t)
+        # FOR NOW, ignore tags, because all are private
+        recipe.pop('tags')
         write_markdown(recipe, op.join(output_dir, f'{slug}.md'))
 
 

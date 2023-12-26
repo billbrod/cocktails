@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sed -i '/{ #recent }/q' docs/index.md
+sed -i '/{ #recent }/q' docs/cocktails/index.md
 echo "" >> docs/index.md
 echo "|Cocktail| Recency (lower is newer) { data-sort-method='number' } |" >> docs/index.md
 echo "|------|-----------|" >> docs/index.md
