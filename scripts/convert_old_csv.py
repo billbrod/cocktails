@@ -44,8 +44,8 @@ def format_csv(df: pd.DataFrame) -> pd.DataFrame:
         notes = df.iloc[notes_line:, 0].dropna(how='all')
     else:
         notes = pd.Series([])
-    data = pd.Series({'sheet_title': sheet_title, 'title': title,
-                      'description': description,
+    data = pd.Series({'tags': '', 'sheet_title': sheet_title,
+                      'title': title, 'description': description,
                       'directions': convert_series_to_string(directions.fillna('')),
                       'notes': convert_series_to_string(notes),
                       'recipe': recipe.fillna('').values}).fillna('')
