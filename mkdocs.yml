@@ -1,0 +1,32 @@
+site_name: Dave's Concoctions' Cocktail Library
+repo_url: https://github.com/billbrod/cocktails
+
+theme:
+  name: 'material'
+  features:
+   - navigation.expand
+   - navigation.top
+  palette:
+    primary: 'blue grey'
+
+plugins:
+    - tags:
+        tags_file: tags.md
+    - search
+    - literate-nav:
+          nav_file: docs/SUMMARY.md     # navigation file for literate navigation
+    - section-index                    # plugin for creating section index
+
+markdown_extensions:
+  - tables
+  - attr_list
+  - pymdownx.betterem
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+    - Home: index.md
+    - Cocktails: cocktails/
+    - Tags: tags.md

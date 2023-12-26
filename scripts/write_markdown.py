@@ -8,10 +8,7 @@ from typing import Dict, List
 from googleapiclient.discovery import Resource
 import download_csv
 
-TEMPLATE = """---
-tags:
-{tags}
----
+TEMPLATE = """{tags}
 # {title}
 
 ## Description
@@ -62,7 +59,7 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
             v = [v_ for i in v for v_ in i.split(',')]
             v = '\n-'.join(v)
             if len(v) >= 1:
-                v = '-' + v
+                v = '---\ntags:\n-' + v + "\n---"
         else:
             v = '\n'.join(v)
         recipe[k] = v
