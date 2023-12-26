@@ -43,7 +43,6 @@ jobs:
           # before storing in secrets: `cat credentials.json | base64 -w 0`, -w
           # 0 puts it on a single line)
           echo ${{ secrets.GOOGLE_CREDENTIALS }} | base64 -d > credentials.json
-          cat credentials.json
           python scripts/write_markdown.py ${{ secrets.GOOGLE_SHEET_ID }} credentials.json all_cocktails/ 'Recipe template'
       - name: Update index
         run: |
