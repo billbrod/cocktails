@@ -67,12 +67,11 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
             if len(v) >= 1:
                 v = '---\ntags:\n-' + v + "\n---"
         elif k in ['directions', 'notes']:
-            # if there's a single newline, add a dash to the beginning of the
-            # line
-            v = [re.sub(r"(.)\n(.)", r'\1\n- \2', v_) for v_ in v]
-            v = '- ' + '\n- '.join(v)
+            # if there's a single newline, replace it with a double newline
+            v = [re.sub(r"(.)\n(.)", r'\1\n\n\2', v_) for v_ in v]
+            v = '\n\n'.join(v)
         else:
-            v = '\n'.join(v)
+            v = '\n\n'.join(v)
         recipe[k] = v
     # the first column is empty
     recipe['recipe'] = create_table([v[1:] for v in vals[6:]])
