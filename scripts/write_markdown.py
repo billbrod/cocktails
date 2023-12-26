@@ -21,6 +21,8 @@ TEMPLATE = """{tags}
 - Drinks: 1
 {{ #serves }}
 
+<!-- order: {order} -->
+
 {recipe}
 
 {directions}
@@ -119,8 +121,9 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
         if t in sheets_to_skip:
             continue
         recipe = json_from_sheet(c, t)
+        recipe['order'] = i
         slug = download_csv.sanitize_title(t)
-        write_markdown(recipe, op.join(output_dir, f'{i:03d}_{slug}.md'))
+        write_markdown(recipe, op.join(output_dir, f'{slug}.md'))
 
 
 if __name__ == '__main__':
