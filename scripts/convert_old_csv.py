@@ -26,7 +26,14 @@ def format_csv(df: pd.DataFrame) -> pd.DataFrame:
     first_col = df.iloc[:, 0].values.tolist()
     total_oz_line = first_col.index('Total Ounces')
     # grab the recipe and drop any empty lines
-    recipe = df.iloc[7:total_oz_line, 2:5].dropna(0, 'all')
+    unit_row = df.loc[df.isin(["Units"]).any(axis=1)].index.tolist()
+    # THIS DOENS"T WORK YET
+    unit_col = df.loc[:, df.isin(["Units"]).any(axis=0)].columns.tolist()
+    if len(unit_row) != 1 or len(unit_col) != 1:
+        raise ValueError("There isn't one unique Units cell!")
+    unit_row = int(unit_row[0])
+    unit_col = int(unit_col[0])
+    recipe = df.iloc[unit_row:total_oz_line, unit_col:unit_col+3].dropna(0, 'all')
     # Find where directions start
     directions_line = [i for i, c in enumerate(first_col) if isinstance(c, str)
                        and c.startswith('Directions')]
