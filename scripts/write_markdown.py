@@ -80,11 +80,16 @@ def write_markdown(recipe: Dict, filename: str):
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
-def main(spreadsheet_id: str, credentials_path: str, output_dir: str):
+@click.argument("sheets_to_skip")
+def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
+         sheets_to_skip: List[str] = ['Recipe template']):
     """Write all sheets from private Google spreadsheet as markdown recipes.
 
     - Each sheet will be written to a separate .md file in output_dir
       (which may exist or not).
+
+    - Sheets whose titles are found in `sheets_to_skip` will not be written to
+      .md files
 
     - credentials_path is the path to the json giving credentials to a service
       account with read access to the spreadsheet (see first two steps
@@ -101,7 +106,7 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str):
     contents = download_csv.get_all_sheets_contents(spreadsheet_resource, spreadsheet_id,
                                                     sheet_titles)
     for t, c in zip(sheet_titles, contents):
-        if t == 'Recipe template':
+        if t in sheets_to_skip:
             continue
         recipe = json_from_sheet(c, t)
         slug = download_csv.sanitize_title(t)
