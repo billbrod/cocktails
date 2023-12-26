@@ -42,14 +42,26 @@ def create_table(recipe: List[List[str]]) -> str:
     """
     tbl = ["|Units | Measure | Ingredient |"]
     tbl.append("|-----|------|-----------|")
+    non_oz_ingredients = False
     for r in recipe:
         while len(r) < 3:
             r.append('')
+        classes = []
         if r[0]:
-            r[0] += ' {.ingredient-num} '
+            classes.append('.ingredient-num')
+        if r[1] and r[1] == 'oz':
+            classes.append('.ingredient-oz')
+        elif r[1] and r[1] != 'Garnish':
+            non_oz_ingredients = True
+        if len(classes) > 0:
+            classes = ' '.join(classes)
+            r[0] += f' {{ {classes} }}'
         # put an empty string before and after the recipe, so the '|'.join adds
         # a pip before and after the rest of the text
         tbl.append('|'.join(['']+r+['']))
+    tbl.append("|0 {#total_vol_oz}|oz|**TOTAL VOLUME (oz ingredients only)**|")
+    if non_oz_ingredients:
+        tbl.append("|0 {#total_vol_all}|oz|**TOTAL VOLUME (oz + other ingredients)**|")
     return '\n'.join(tbl)
 
 

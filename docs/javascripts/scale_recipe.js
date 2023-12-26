@@ -33,7 +33,23 @@ document$.subscribe(function() {
         $('.ingredient-num').each(function(idx, elem){
             orig = $(elem).attr("data-original", $(elem).text())
         })
-        // when the serves number changes, update the
+        const sum_oz = function(){
+            return $.map($('.ingredient-oz'), function(ingr) {
+                return parseFloat($(ingr).text())
+            }).reduce((sum, next) => sum+next, 0)
+        }
+        const convert_volumes = function(val, unit) {
+            conversions = Object({'dash': .021, 'tsp': 1/6, 'Tbsp': .5, 'Garnish': 0})
+            return parseFloat(val) * conversions[unit]
+        }
+        const sum_others = function(){
+            return $.map($('.ingredient-num').not('.ingredient-oz'), function(ingr) {
+                return convert_volumes(parseFloat($(ingr).text()), $(ingr).next().text())
+            }).reduce((sum, next) => sum+next, 0)
+        }
+        $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
+        $('#total_vol_all').text(`${(sum_others() + sum_oz()).toFixed(3)}`)
+        // when the serves number changes, update the individuals and the total
         $('#serves-input').on("change", function(){
             orig = $('#serves').attr('data-original')
             new_val = $('#serves-input').val()
@@ -43,6 +59,8 @@ document$.subscribe(function() {
                 new_val = $(elem).text().split('-').map((x, i) => (parseFloat(orig[i])*ratio).toFixed(2)).join('-')
                 $(elem).text(new_val)
             })
+            $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
+            $('#total_vol_all').text(`${(sum_others() + sum_oz()).toFixed(3)}`)
         })
     }
 })
