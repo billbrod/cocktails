@@ -1,4 +1,4 @@
-site_name: Dave's Concoctions' Cocktail Library
+site_name: "Dave's Concoctions' Cocktail Library"
 repo_url: https://github.com/billbrod/cocktails
 
 theme:
@@ -25,6 +25,12 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+
+extra_javascript:
+  - https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js
+  - javascripts/scale_recipe.js
+extra_css:
+  - stylesheets/extra.css
 
 nav:
     - Home: index.md
