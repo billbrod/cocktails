@@ -41,6 +41,7 @@ jobs:
         run: |
           # copy credentials into json file
           echo "${{ secrets.GOOGLE_CREDENTIALS }}" > credentials.json
+          cat credentials.json
           python scripts/write_markdown.py ${{ secrets.GOOGLE_SHEET_ID }} credentials.json all_cocktails/ 'Recipe template'
       - name: Update index
         run: |
