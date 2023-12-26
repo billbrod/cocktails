@@ -39,8 +39,9 @@ jobs:
           pip install -r scripts/requirements.txt
       - name: Write cocktails to markdown
         run: |
-          # copy credentials into json file
-          echo ${{ secrets.GOOGLE_CREDENTIALS }} > credentials.json
+          # copy credentials into json file (it has been encoded in base64
+          # before storing in secrets)
+          echo ${{ secrets.GOOGLE_CREDENTIALS }} | base64 -d > credentials.json
           cat credentials.json
           python scripts/write_markdown.py ${{ secrets.GOOGLE_SHEET_ID }} credentials.json all_cocktails/ 'Recipe template'
       - name: Update index
