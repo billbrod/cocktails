@@ -18,7 +18,7 @@ TEMPLATE = """{tags}
 
 ## Recipe
 
-- Makes: 1
+- Drinks: 1
 {{ #serves }}
 
 {recipe}
@@ -40,7 +40,8 @@ def create_table(recipe: List[List[str]]) -> str:
     for r in recipe:
         while len(r) < 3:
             r.append('')
-        r[0] += ' {.ingredient-num} '
+        if r[0]:
+            r[0] += ' {.ingredient-num} '
         # put an empty string before and after the recipe, so the '|'.join adds
         # a pip before and after the rest of the text
         tbl.append('|'.join(['']+r+['']))

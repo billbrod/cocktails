@@ -1,6 +1,6 @@
 document$.subscribe(function() {
     // get the original serves value
-    const parse_serves = RegExp('Serves: +([0-9]+)(.*)')
+    const parse_serves = RegExp('Drinks: +([0-9]+)(.*)')
     orig = parse_serves.exec($('#serves').text())
     // only do this if we can find the serves section, otherwise the exception
     // blocks loading of all other javascript
