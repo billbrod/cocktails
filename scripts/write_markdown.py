@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import os.path as op
 import click
 import pandas as pd
@@ -60,6 +61,11 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
             v = '\n-'.join(v)
             if len(v) >= 1:
                 v = '---\ntags:\n-' + v + "\n---"
+        elif k in ['directions', 'notes']:
+            # if there's a single newline, add a dash to the beginning of the
+            # line
+            v = [re.sub(r"(.)\n(.)", r'\1\n- \2', v_) for v_ in v]
+            v = '- ' + '\n- '.join(v)
         else:
             v = '\n'.join(v)
         recipe[k] = v
@@ -80,7 +86,7 @@ def write_markdown(recipe: Dict, filename: str):
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
-@click.argument("sheets_to_skip")
+@click.argument("sheets_to_skip", nargs=-1)
 def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
          sheets_to_skip: List[str] = ['Recipe template']):
     """Write all sheets from private Google spreadsheet as markdown recipes.
@@ -105,12 +111,12 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
     sheet_titles = download_csv.get_all_sheet_names(spreadsheet_resource, spreadsheet_id)
     contents = download_csv.get_all_sheets_contents(spreadsheet_resource, spreadsheet_id,
                                                     sheet_titles)
-    for t, c in zip(sheet_titles, contents):
+    for i, (t, c) in enumerate(zip(sheet_titles, contents)):
         if t in sheets_to_skip:
             continue
         recipe = json_from_sheet(c, t)
         slug = download_csv.sanitize_title(t)
-        write_markdown(recipe, op.join(output_dir, f'{slug}.md'))
+        write_markdown(recipe, op.join(output_dir, f'{i:03d}_{slug}.md'))
 
 
 if __name__ == '__main__':
