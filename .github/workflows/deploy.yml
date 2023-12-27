@@ -47,7 +47,7 @@ jobs:
       - name: Update index
         run: |
           # NO TRAILING SLASH
-          ./scripts/update_index.sh docs/index.md cocktails
+          ./scripts/update_index.sh docs/index.md docs/cocktails
       - name: Build website
         # we build the site like normal, then move everything into the hidden
         # directory, except for the index.html page which redirects
