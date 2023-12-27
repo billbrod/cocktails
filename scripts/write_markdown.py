@@ -77,12 +77,16 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
         except IndexError:
             # then there's no values, it's empty
             v = []
-        if k == 'tags':
+        if k == 'tags' and v:
             # make a single list of tags
-            v = [v_ for i in v for v_ in i.split(',')]
-            v = '\n-'.join(v)
-            if len(v) >= 1:
-                v = '---\ntags:\n-' + v + "\n---"
+            tags = []
+            # for each column of tags
+            for v_ in v:
+                # split by comma
+                for i in v_.split(','):
+                    tags.append(':'.join([i_.strip() for i_ in i.split(':')]))
+            v = '\n- '.join(tags)
+            v = '---\ntags:\n- ' + v + "\n---"
         elif k in ['directions', 'notes']:
             # if there's a single newline, replace it with a double newline
             v = [re.sub(r"(.)\n(.)", r'\1\n\n\2', v_) for v_ in v]
