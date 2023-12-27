@@ -43,22 +43,25 @@ jobs:
           # before storing in secrets: `cat credentials.json | base64 -w 0`, -w
           # 0 puts it on a single line)
           echo ${{ secrets.GOOGLE_CREDENTIALS }} | base64 -d > credentials.json
-          python scripts/write_markdown.py ${{ secrets.GOOGLE_SHEET_ID }} credentials.json cocktails/ 'Recipe template'
+          python scripts/write_markdown.py ${{ secrets.GOOGLE_SHEET_ID }} credentials.json docs/cocktails/ 'Recipe template'
       - name: Update index
         run: |
           # NO TRAILING SLASH
-          ./scripts/update_index.sh cocktails
-      - name: Move secret recipes
+          ./scripts/update_index.sh docs/index.md cocktails
+      - name: Build website
+        # we build the site like normal, then move everything into the hidden
+        # directory, except for the index.html page which redirects
+        run: mkdocs build
+      - name: Move website behind password
         env:
           SECRET_RECIPES_DIR: ${{ secrets.PASSWORD_HASH }}
         run : |
-          mkdir -p docs/cocktails/"$SECRET_RECIPES_DIR/"
-          cp -r cocktails/ docs/cocktails/"$SECRET_RECIPES_DIR/"
-          mv docs/cocktails/index.md docs/cocktails/"$SECRET_RECIPES_DIR"/index.md
-      - name: Build website
-        # this is the site that jekyll produces its output, and so where github
-        # pages expects it to live
-        run: mkdocs build --site-dir ./_site
+          # this is the dir in which jekyll produces its output, and so where
+          # github pages expects it to live
+          mkdir _site/
+          cp docs/password_index.html _site/index.html
+          mv site/robots.txt _site/robots.txt
+          mv site/ _site/"$SECRET_RECIPES_DIR/"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 

@@ -37,5 +37,5 @@ extra_css:
 
 nav:
     - Home: index.md
-    - Cocktails: cocktails/index.html
+    - Cocktails: cocktails/
     - Tags: tags.md
