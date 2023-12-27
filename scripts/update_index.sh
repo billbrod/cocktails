@@ -12,7 +12,7 @@ for file in ${all_files[*]}; do
         recipe_name="$(grep -h '^# ' $file)"
         # capture only the number
         order="$(grep -Po '(?<=order: )([0-9]+)' $file)"
-        file=${file/\/\//\//}
+        file=${file/docs\///}
         echo "|[${recipe_name/\# /}](${file/.md//})|$order|" >> $index_file
     fi
 done
