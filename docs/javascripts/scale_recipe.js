@@ -29,9 +29,37 @@ document$.subscribe(function() {
         $('#serves').append(plus_button)
         $('#serves').append(orig[2])
         $('#plus-button').click(increment)
+        const scale_input = '<input class="md-typeset form-control scale-input" type="text" min="0" id="scale-input">'
+        const ml_button = '<input id="ml_button" class="md-typeset btn-check" type="radio" name="scale_button" value="mL">'
+        const ml_label = '<label for="ml_button" class="md-typeset btn btn-outline-primary">mL</label>'
+        const oz_button = '<input id="oz_button" class="md-typeset btn-check" type="radio" name="scale_button" value="oz" checked="">'
+        const oz_label = '<label for="oz_button" class="md-typeset btn btn-outline-primary">oz</label>'
+        $('#scale').append(scale_input)
+        $('#scale').append(oz_button)
+        $('#scale').append(oz_label)
+        $('#scale').append(ml_button)
+        $('#scale').append(ml_label)
+        // to get current checked:
         // encode original ingredient values
         $('.ingredient-num').each(function(idx, elem){
             orig = $(elem).attr("data-original", $(elem).text())
+        })
+        const scale_up = function(){
+            tgt_oz = convert_volumes($('#scale-input').val(),
+                                     $('input[name=scale_button]:checked').attr('value'))
+            single_serv = $('#total_vol_oz').attr('data-original')
+            n_drinks = parseInt(tgt_oz / single_serv)
+            $('#serves-input').val(n_drinks).change()
+        }
+        $('#scale-input').on('change', scale_up)
+        $('input[name=scale_button]').on('change', scale_up)
+        $('input[name=scale_button]').on('change', function() {
+            if ($('input[name=scale_button]:checked').attr('value') === "mL") {
+                convert = 1/.035
+            } else {
+                convert = .035
+            }
+            $('#scale-input').val($('#scale-input').val() * convert).change()
         })
         const sum_oz = function(){
             return $.map($('.ingredient-oz'), function(ingr) {
@@ -39,7 +67,8 @@ document$.subscribe(function() {
             }).reduce((sum, next) => sum+next, 0)
         }
         const convert_volumes = function(val, unit) {
-            conversions = Object({'dash': .021, 'tsp': 1/6, 'Tbsp': .5, 'Garnish': 0})
+            conversions = Object({'dash': .021, 'tsp': 1/6, 'Tbsp': .5, 'Garnish': 0,
+                                  'mL': .035, 'oz': 1})
             return parseFloat(val) * conversions[unit]
         }
         const sum_others = function(){
@@ -48,7 +77,9 @@ document$.subscribe(function() {
             }).reduce((sum, next) => sum+next, 0)
         }
         $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
+        $('#total_vol_oz').attr('data-original', `${sum_oz().toFixed(3)}`)
         $('#total_vol_all').text(`${(sum_others() + sum_oz()).toFixed(3)}`)
+        $('#total_vol_all').attr('data-original', `${(sum_others() + sum_oz()).toFixed(3)}`)
         // when the serves number changes, update the individuals and the total
         $('#serves-input').on("change", function(){
             orig = $('#serves').attr('data-original')

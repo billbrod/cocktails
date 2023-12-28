@@ -25,6 +25,9 @@ TEMPLATE = """{tags}
 
 {recipe}
 
+- Scale up to
+{{ #scale }}
+
 {directions}
 
 ## Notes
