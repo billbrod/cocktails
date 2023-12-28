@@ -110,7 +110,8 @@ def write_markdown(recipe: str, filename: str):
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
-@click.argument("sheets_to_skip", nargs=-1)
+@click.option("--sheets_to_skip", "-s", multiple=True)
+@click.option("--sheets_to_leave", "-l", multiple=True)
 def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
          sheets_to_skip: List[str] = ['Recipe template', 'Instructions'],
          sheets_to_leave: List[str] = ['Simple Syrups']):
