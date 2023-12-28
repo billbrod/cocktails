@@ -37,5 +37,6 @@ extra_css:
 
 nav:
     - Home: index.md
+    - Simple Syrups: cocktails/simple_syrups.md
     - Cocktails: cocktails/
     - Tags: tags.md

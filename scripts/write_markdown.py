@@ -99,12 +99,11 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
     return recipe
 
 
-def write_markdown(recipe: Dict, filename: str):
-    """Write markdown file for single processed recipe Dict.
+def write_markdown(recipe: str, filename: str):
+    """Write str to file.
     """
-    rec = TEMPLATE.format(**recipe)
     with open(filename, 'w') as f:
-        f.write(rec)
+        f.write(recipe)
 
 
 @click.command()
@@ -113,7 +112,8 @@ def write_markdown(recipe: Dict, filename: str):
 @click.argument("output_dir")
 @click.argument("sheets_to_skip", nargs=-1)
 def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
-         sheets_to_skip: List[str] = ['Recipe template']):
+         sheets_to_skip: List[str] = ['Recipe template', 'Instructions'],
+         sheets_to_leave: List[str] = ['Simple Syrups']):
     """Write all sheets from private Google spreadsheet as markdown recipes.
 
     - Each sheet will be written to a separate .md file in output_dir
@@ -121,6 +121,9 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
 
     - Sheets whose titles are found in `sheets_to_skip` will not be written to
       .md files
+
+    - Sheets whose titles are found in `sheets_to_leave` will not be parsed as
+      recipes, and will just be written to .md files as is.
 
     - credentials_path is the path to the json giving credentials to a service
       account with read access to the spreadsheet (see first two steps
@@ -137,10 +140,19 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
     contents = download_csv.get_all_sheets_contents(spreadsheet_resource, spreadsheet_id,
                                                     sheet_titles)
     for i, (t, c) in enumerate(zip(sheet_titles, contents)):
+        # so that we start at 1
+        i = i - len(sheets_to_skip) - len(sheets_to_leave) + 1
         if t in sheets_to_skip:
             continue
-        recipe = json_from_sheet(c, t)
-        recipe['order'] = i
+        elif t in sheets_to_leave:
+            recipe = [' '.join(v) for v in c['values']]
+            # if there's a single newline, replace it with a double newline
+            recipe = [re.sub(r"(.)\n(.)", r'\1\n\n\2', v) for v in recipe]
+            recipe = '\n\n'.join(recipe)
+        else:
+            recipe = json_from_sheet(c, t)
+            recipe['order'] = i
+            recipe = TEMPLATE.format(**recipe)
         slug = download_csv.sanitize_title(t)
         write_markdown(recipe, op.join(output_dir, f'{slug}.md'))
 

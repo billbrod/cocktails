@@ -10,9 +10,12 @@ all_files="$(ls $2/*md)"
 for file in ${all_files[*]}; do
     if [[ $file != *"index.md" ]]; then
         recipe_name="$(grep -h '^# ' $file)"
-        # capture only the number
-        order="$(grep -Po '(?<=order: )([0-9]+)' $file)"
-        file=${file/docs\///}
-        echo "|[${recipe_name/\# /}](${file/.md//})|$order|" >> $index_file
+        # if it doesn't have an order: line, then we skip it
+        if grep -q "order:" $file; then
+            # capture only the number
+            order="$(grep -Po '(?<=order: )([0-9]+)' $file)"
+            file=${file/docs\///}
+            echo "|[${recipe_name/\# /}](${file/.md//})|$order|" >> $index_file
+        fi
     fi
 done
