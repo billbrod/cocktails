@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import re
 import os.path as op
 import click
@@ -40,8 +41,8 @@ TEMPLATE = """{tags}
 def create_table(recipe: List[List[str]]) -> str:
     """Create 3-column table from recipe.
     """
-    tbl = ["|Units | Measure | Ingredient |"]
-    tbl.append("|-----|------|-----------|")
+    tbl = ["|Units | Measure | Ingredient | Price |"]
+    tbl.append("|-----|------|-----------|-----|")
     non_oz_ingredients = False
     for r in recipe:
         while len(r) < 3:
@@ -53,15 +54,20 @@ def create_table(recipe: List[List[str]]) -> str:
             classes.append('.ingredient-oz')
         elif r[1] and r[1] != 'Garnish':
             non_oz_ingredients = True
+        if r[2]:
+            r[2] += ' {.ingredient}'
         if len(classes) > 0:
             classes = ' '.join(classes)
             r[0] += f' {{ {classes} }}'
         # put an empty string before and after the recipe, so the '|'.join adds
         # a pip before and after the rest of the text
-        tbl.append('|'.join(['']+r+['']))
-    tbl.append("|0 {#total_vol_oz}|oz|**TOTAL VOLUME (oz ingredients only)**|")
+        tbl.append('|'.join(['']+r+['0 {.ingredient-price}','']))
+    tbl.append("|0 {#total_vol_oz}|oz|**TOTAL VOLUME (oz ingredients only)**| ")
     if non_oz_ingredients:
-        tbl.append("|0 {#total_vol_all}|oz|**TOTAL VOLUME (oz + other ingredients)**|")
+        tbl[-1] += "|"
+        tbl.append("|0 {#total_vol_all}|oz|**TOTAL VOLUME (oz + other ingredients)**| 0 {#total-price} |")
+    else:
+        tbl[-1] += " 0 {#total-price} |"
     return '\n'.join(tbl)
 
 
@@ -99,22 +105,17 @@ def json_from_sheet(returned: Dict, title: str) -> Dict:
     return recipe
 
 
-def write_markdown(recipe: str, filename: str):
-    """Write str to file.
-    """
-    with open(filename, 'w') as f:
-        f.write(recipe)
-
-
 @click.command()
 @click.argument('spreadsheet_id')
 @click.argument("credentials_path")
 @click.argument("output_dir")
 @click.option("--sheets_to_skip", "-s", multiple=True)
 @click.option("--sheets_to_leave", "-l", multiple=True)
+@click.option("--dictionary_sheets", "-d", multiple=True)
 def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
          sheets_to_skip: List[str] = ['Recipe template', 'Instructions'],
-         sheets_to_leave: List[str] = ['Simple Syrups']):
+         sheets_to_leave: List[str] = ['Simple Syrups'],
+         dictionary_sheets: List[str] = ['Ingredients', 'Prices']):
     """Write all sheets from private Google spreadsheet as markdown recipes.
 
     - Each sheet will be written to a separate .md file in output_dir
@@ -125,6 +126,9 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
 
     - Sheets whose titles are found in `sheets_to_leave` will not be parsed as
       recipes, and will just be written to .md files as is.
+
+    - Sheets whose titles are found in `dictionary_sheets` will not be parsed
+      as recipes, and will just be written to .json files as is.
 
     - credentials_path is the path to the json giving credentials to a service
       account with read access to the spreadsheet (see first two steps
@@ -142,7 +146,9 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
                                                     sheet_titles)
     for i, (t, c) in enumerate(zip(sheet_titles, contents)):
         # so that we start at 1
-        i = i - len(sheets_to_skip) - len(sheets_to_leave) + 1
+        i = i - len(sheets_to_skip) - len(sheets_to_leave) - len(dictionary_sheets) + 1
+        ext = 'md'
+        write_func = lambda f, rec: f.write(rec)
         if t in sheets_to_skip:
             continue
         elif t in sheets_to_leave:
@@ -150,12 +156,19 @@ def main(spreadsheet_id: str, credentials_path: str, output_dir: str,
             # if there's a single newline, replace it with a double newline
             recipe = [re.sub(r"(.)\n(.)", r'\1\n\n\2', v) for v in recipe]
             recipe = '\n\n'.join(recipe)
+        elif t in dictionary_sheets:
+            ext = 'json'
+            recipe = {}
+            for v in c['values']:
+                recipe[v[0].lower().strip()] = [v_.lower().strip() for v_ in v[1:]]
+            write_func = lambda f, rec: json.dump(rec, f)
         else:
             recipe = json_from_sheet(c, t)
             recipe['order'] = i
             recipe = TEMPLATE.format(**recipe)
         slug = download_csv.sanitize_title(t)
-        write_markdown(recipe, op.join(output_dir, f'{slug}.md'))
+        with open(op.join(output_dir, f'{slug}.{ext}'), 'w') as f:
+            write_func(f, recipe)
 
 
 if __name__ == '__main__':

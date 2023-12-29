@@ -1,10 +1,50 @@
 document$.subscribe(function() {
+    function capitalize(string) {
+        return string.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+    }
     // get the original serves value
     const parse_serves = RegExp('Drinks: +([0-9]+)(.*)')
     orig = parse_serves.exec($('#serves').text())
     // only do this if we can find the serves section, otherwise the exception
     // blocks loading of all other javascript
     if (orig !== null) {
+        $.getJSON('./../prices.json', function(prices) {
+            $.getJSON('./../ingredients.json', function(ingredients) {
+                $('.ingredient').each(function(idx, elem) {
+                    if ($(elem).text().indexOf('[') > -1) {
+                        // then extract the values within the brackets
+                        ingr =  $(elem).text()
+                        ingr = ingr.substring(ingr.indexOf('[')+1, ingr.indexOf(']')).split(',')
+                        ingr = ingr.map(d => d.trim().toLowerCase())
+                        $(elem).text($(elem).text().split('[')[0])
+                    } else {
+                        ingr = $(elem).text().split('(')[0].trim().toLowerCase()
+                        $(elem).attr('ingredient-name', ingr)
+                        ingr = ingredients[ingr]
+                    }
+                    if (ingr !== undefined) {
+                        price = ingr.map(d => convert_prices(prices[d]))
+                        dropdown = ingr.map((d, i) => `<option ingredient-price=${price[i]}>${capitalize(d)}</option>`).join('')
+                        const slct = `<select class="form-select ingredient-select">${dropdown}</select>`
+                        $(elem).append(slct)
+                    } else {
+                        ingr = $(elem).attr('ingredient-name')
+                        $(elem).attr('ingredient-price', convert_prices(prices[ingr]))
+                    }
+                })
+                price_out()
+                $('.ingredient-select').on('change', price_out)
+            })
+        })
+        function convert_prices(price) {
+            if (price !== undefined) {
+                vol_oz = convert_volumes(price[1], price[2])
+                price_oz = parseFloat(price[0]) / vol_oz
+                return price_oz.toFixed(2)
+            } else {
+                return 0
+            }
+        }
         $('#serves').attr('data-original', orig[1])
         $('#serves').text(orig[0].replace(orig[1], '  ').replace(orig[2], ''))
         // create the +/- buttons
@@ -68,13 +108,39 @@ document$.subscribe(function() {
         }
         const convert_volumes = function(val, unit) {
             conversions = Object({'dash': .021, 'tsp': 1/6, 'Tbsp': .5, 'Garnish': 0,
-                                  'mL': .035, 'oz': 1})
+                                  'ml': .035, 'mL': .035, 'oz': 1})
             return parseFloat(val) * conversions[unit]
         }
         const sum_others = function(){
             return $.map($('.ingredient-num').not('.ingredient-oz'), function(ingr) {
                 return convert_volumes(parseFloat($(ingr).text()), $(ingr).next().text())
             }).reduce((sum, next) => sum+next, 0)
+        }
+        const price_out = function() {
+            $('.ingredient-price').each(function(idx, elem) {
+                // this is the ingredient column in the same row. it might have
+                // a select element, in which case, we grab the price from the
+                // selected one. else, grab price from the whole row.
+                ingr = $(elem).prev()
+                if (ingr.find('select').length > 0) {
+                    oz_price = ingr.find('select option:selected').attr('ingredient-price')
+                } else {
+                    oz_price = ingr.attr('ingredient-price')
+                }
+                ingr_num = parseFloat($($(elem).siblings()[0]).text())
+                ingr_measure = $($(elem).siblings()[1]).text()
+                ingr_oz = convert_volumes(ingr_num, ingr_measure)
+                price = (parseFloat(oz_price) * ingr_oz).toFixed(2)
+                // if price is NaN, just use the empty string
+                price = isNaN(price) ?  "" : price
+                $(elem).text(price)
+            })
+            const price_sum = $.map($('.ingredient-price'), function(val) {
+                // if there are any NaNs (or anything else we can't cast to
+                // float), use 0 instead
+                return parseFloat($(val).text()) || 0
+            }).reduce((sum, next) => sum+next, 0)
+            $('#total-price').text(price_sum)
         }
         $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
         $('#total_vol_oz').attr('data-original', `${sum_oz().toFixed(3)}`)
@@ -92,6 +158,7 @@ document$.subscribe(function() {
             })
             $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
             $('#total_vol_all').text(`${(sum_others() + sum_oz()).toFixed(3)}`)
+            price_out()
         })
     }
 })
