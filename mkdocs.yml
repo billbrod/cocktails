@@ -3,6 +3,8 @@ repo_url: https://github.com/billbrod/cocktails
 
 theme:
   name: 'material'
+  logo: assets/icon.svg
+  favicon: assets/icon.svg
   features:
    - navigation.expand
    - navigation.top
