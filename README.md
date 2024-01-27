@@ -5,11 +5,22 @@ Static site for viewing cocktails
 TODO:
 - simple syrup and recipe pages, ignore others
 - scale up, price out
-- create "events pages" with certain recipes
+- create "events pages" with certain recipes: I think just have events in tags
 - have page mapping generic spirits to brands
 - allow recipes to specify generic spirits or lists of spirits (with default)
 - public and private recipes (with tags)
 
+Comments: can use [utterances](https://utteranc.es/), but any of the "bot
+automatically creates issue" options for how to match issue and page will have
+the bot post the link to the specific page, which defeats the purpose of having
+the site behind the password. works fine if we create issues, but then if issue
+doesn't exist, the comment thing just doesn't load, so we'd need to manually
+create issues for every page. could probably do that using github api but ...
+doesn't seem ideal.
+
+looking on the issues, it looks like it's possible to get it working with a
+private repo, but then the bot and everyone who wants to post needs to be added
+as contributors (so one extra step involved).
 
 ## To use
 
