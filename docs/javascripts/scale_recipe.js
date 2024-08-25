@@ -18,7 +18,7 @@ document$.subscribe(function() {
                         ingr = ingr.map(d => d.trim().toLowerCase())
                         $(elem).text($(elem).text().split('[')[0])
                     } else {
-                        ingr = $(elem).text().split('(')[0].trim().toLowerCase()
+                        ingr = $(elem).html().split('(')[0].split('<a>')[0].trim().toLowerCase()
                         $(elem).attr('ingredient-name', ingr)
                         ingr = ingredients[ingr]
                     }

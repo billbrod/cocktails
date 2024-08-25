@@ -1,3 +1,11 @@
+.ingredient a:hover {
+  color: var(--md-default-fg-color);
+}
+
+.ingredient a {
+  color: var(--md-default-fg-color);
+}
+
 input {
     text-align: center;
 }

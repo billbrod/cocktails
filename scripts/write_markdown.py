@@ -55,6 +55,9 @@ def create_table(recipe: List[List[str]]) -> str:
         elif r[1] and r[1] != 'Garnish':
             non_oz_ingredients = True
         if r[2]:
+            # any additional columns are comments, which we want separated within an <a>
+            # tag
+            r[2] += "<a>" + ' '.join(r[3:]) + "</a>"
             r[2] += ' {.ingredient}'
         if len(classes) > 0:
             classes = ' '.join(classes)
