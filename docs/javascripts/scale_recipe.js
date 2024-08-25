@@ -132,15 +132,16 @@ document$.subscribe(function() {
                 ingr_oz = convert_volumes(ingr_num, ingr_measure)
                 price = (parseFloat(oz_price) * ingr_oz).toFixed(2)
                 // if price is NaN, just use the empty string
-                price = isNaN(price) ?  "" : price
+                price = isNaN(price) ?  "" : "$" + price
                 $(elem).text(price)
             })
             const price_sum = $.map($('.ingredient-price'), function(val) {
                 // if there are any NaNs (or anything else we can't cast to
-                // float), use 0 instead
-                return parseFloat($(val).text()) || 0
+                // float), use 0 instead, ignoring the first character, since
+                // that's a dollar sign
+                return parseFloat($(val).text().slice(1)) || 0
             }).reduce((sum, next) => sum+next, 0)
-            $('#total-price').text(price_sum)
+            $('#total-price').text("$" + price_sum.toFixed(2))
         }
         $('#total_vol_oz').text(`${sum_oz().toFixed(3)}`)
         $('#total_vol_oz').attr('data-original', `${sum_oz().toFixed(3)}`)
