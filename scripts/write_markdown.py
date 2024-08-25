@@ -64,7 +64,7 @@ def create_table(recipe: List[List[str]]) -> str:
             r[0] += f' {{ {classes} }}'
         # put an empty string before and after the recipe, so the '|'.join adds
         # a pip before and after the rest of the text
-        tbl.append('|'.join(['']+r+['0 {.ingredient-price}','']))
+        tbl.append('|'.join(['']+r[:3]+['0 {.ingredient-price}','']))
     tbl.append("|0 {#total_vol_oz}|oz|**TOTAL VOLUME (oz ingredients only)**| ")
     if non_oz_ingredients:
         tbl[-1] += "|"
